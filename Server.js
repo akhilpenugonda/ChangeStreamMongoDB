@@ -20,11 +20,11 @@ async function startChangeStream() {
     switch(next.operationType){
       case "insert":
         insertDocument.Operation = next.operationType;
-        insertDocument.Decsription = next.fullDocument;
+        insertDocument.Description = next.fullDocument;
         break;
       case "update":
         insertDocument.Operation = next.operationType;
-        insertDocument.Decsription = next.updateDescription;
+        insertDocument.Description = next.updateDescription;
         break;
       }
     AuditColl.insertOne(insertDocument);
@@ -70,11 +70,11 @@ async function startChangeStream() {
     switch(next.operationType){
       case "insert":
         insertDocument.Operation = next.operationType;
-        insertDocument.Decsription = next.fullDocument;
+        insertDocument.Description = next.fullDocument;
         break;
       case "update":
         insertDocument.Operation = next.operationType;
-        insertDocument.Decsription = next.updateDescription;
+        insertDocument.Description = next.updateDescription;
         break;
       }
     AuditColl.insertOne(insertDocument);
@@ -82,7 +82,7 @@ async function startChangeStream() {
 }
 function getInsertDocument(streamNext)
 {
-  let insertDocument = {"CollectionInfo": null, "Operation": null, "Decsription": null, "TimeStamp": new Date()}
+  let insertDocument = {"CollectionInfo": null, "Operation": null, "Description": null, "TimeStamp": new Date()}
   insertDocument.CollectionInfo = streamNext.ns.db + "." + streamNext.ns.coll;
   return insertDocument;
 }
