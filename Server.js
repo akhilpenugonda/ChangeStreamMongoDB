@@ -27,7 +27,7 @@ async function startChangeStream() {
         insertDocument.Description = next.updateDescription;
         break;
       }
-    AuditColl.insertOne(insertDocument);
+    await AuditColl.insertOne(insertDocument);
   });
   const dbPipeline = [
     {
@@ -77,7 +77,7 @@ async function startChangeStream() {
         insertDocument.Description = next.updateDescription;
         break;
       }
-    AuditColl.insertOne(insertDocument);
+    await AuditColl.insertOne(insertDocument);
   });
 }
 function getInsertDocument(streamNext)
