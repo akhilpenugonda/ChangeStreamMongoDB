@@ -3,11 +3,9 @@ const MongoClient = require('mongodb').MongoClient;
 async function startChangeStream() {
   const client = await MongoClient.connect('mongodb+srv://admin:admin@cluster0.8dymixf.mongodb.net');
   const db = client.db('test');
-  await booksWatch(db);
-  await databaseWatch(db);
-}
-async function booksWatch(db)
-{
+
+  // await booksWatch(db);
+  // await databaseWatch(db);
   const collection = db.collection('books');
   list = collection.find();
   // console.log(list);
@@ -18,8 +16,7 @@ async function booksWatch(db)
     console.log('Received change event:', next);
     resumeToken = next._id;
     await db.collection('resumeToken').updateOne({}, { $set: { resumeToken } }, { upsert: true });
-    insertDocument = {"CollectionInfo": null, "Operation": null, "Decsription": null}
-    insertDocument.CollectionInfo = next.ns.db + "." + next.ns.coll;
+    let insertDocument = getInsertDocument(next);
     switch(next.operationType){
       case "insert":
         insertDocument.Operation = next.operationType;
@@ -32,10 +29,6 @@ async function booksWatch(db)
       }
     AuditColl.insertOne(insertDocument);
   });
-}
-async function databaseWatch(db)
-{
-  const AuditColl = db.collection('AuditCollection');
   const dbPipeline = [
     {
       $match: {
@@ -56,6 +49,14 @@ async function databaseWatch(db)
               },
             },
           },
+          {
+            ns: {
+              $ne: {
+                db: "test",
+                coll: "books",
+              },
+            },
+          },
         ],
       },
     },
@@ -65,8 +66,7 @@ async function databaseWatch(db)
     console.log('Received change event:', next);
     resumeToken = next._id;
     await db.collection('resumeToken').updateOne({}, { $set: { resumeToken } }, { upsert: true });
-    insertDocument = {"CollectionInfo": null, "Operation": null, "Decsription": null}
-    insertDocument.CollectionInfo = next.ns.db + "." + next.ns.coll;
+    let insertDocument = getInsertDocument(next);
     switch(next.operationType){
       case "insert":
         insertDocument.Operation = next.operationType;
@@ -79,6 +79,20 @@ async function databaseWatch(db)
       }
     AuditColl.insertOne(insertDocument);
   });
+}
+function getInsertDocument(streamNext)
+{
+  let insertDocument = {"CollectionInfo": null, "Operation": null, "Decsription": null, "TimeStamp": new Date()}
+  insertDocument.CollectionInfo = streamNext.ns.db + "." + streamNext.ns.coll;
+  return insertDocument;
+}
+async function booksWatch(db)
+{
+  
+}
+async function databaseWatch(db)
+{
+  
 }
 async function resumeIfAny(db)
 {
