@@ -3,6 +3,11 @@ const MongoClient = require('mongodb').MongoClient;
 async function startChangeStream() {
   const client = await MongoClient.connect('mongodb+srv://admin:admin@cluster0.8dymixf.mongodb.net');
   const db = client.db('test');
+  await booksWatch(db);
+  await databaseWatch(db);
+}
+async function booksWatch(db)
+{
   const collection = db.collection('books');
   list = collection.find();
   // console.log(list);
@@ -17,8 +22,8 @@ async function startChangeStream() {
     insertDocument.CollectionInfo = next.ns.db + "." + next.ns.coll;
     switch(next.operationType){
       case "insert":
-        insertDocument.Operation = next.fullDocument;
-        insertDocument.Decsription = next.updateDescription;
+        insertDocument.Operation = next.operationType;
+        insertDocument.Decsription = next.fullDocument;
         break;
       case "update":
         insertDocument.Operation = next.operationType;
@@ -27,7 +32,6 @@ async function startChangeStream() {
       }
     AuditColl.insertOne(insertDocument);
   });
-  await databaseWatch(db);
 }
 async function databaseWatch(db)
 {
@@ -65,8 +69,8 @@ async function databaseWatch(db)
     insertDocument.CollectionInfo = next.ns.db + "." + next.ns.coll;
     switch(next.operationType){
       case "insert":
-        insertDocument.Operation = next.fullDocument;
-        insertDocument.Decsription = next.updateDescription;
+        insertDocument.Operation = next.operationType;
+        insertDocument.Decsription = next.fullDocument;
         break;
       case "update":
         insertDocument.Operation = next.operationType;
@@ -74,6 +78,17 @@ async function databaseWatch(db)
         break;
       }
     AuditColl.insertOne(insertDocument);
+  });
+}
+async function resumeIfAny(db)
+{
+  let resumeToken = await db.collection('resumeToken').findOne({});
+  resumeToken = resumeToken ? resumeToken.resumeToken : {};
+  const changeStream = client.watch([], { startAtOperationTime: resumeToken });
+  changeStream.on('change', async next => {
+    console.log('Change detected: ', next);
+    resumeToken = next._id;
+    await db.collection('resumeToken').updateOne({}, { $set: { resumeToken } }, { upsert: true });
   });
 }
 startChangeStream();
