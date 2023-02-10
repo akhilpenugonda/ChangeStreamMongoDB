@@ -3,13 +3,16 @@ const MongoClient = require('mongodb').MongoClient;
 async function startChangeStream() {
   const client = await MongoClient.connect('mongodb+srv://admin:admin@cluster0.8dymixf.mongodb.net');
   const db = client.db('test');
-
+  // const oplog = client.db("local").collection("oplog.rs");
+  // let firstItem = await oplog.findOne({ ns: "test.StreamTest" }, { sort: { $natural: -1 } });
   // await booksWatch(db);
   // await databaseWatch(db);
   const collection = db.collection('books');
   list = collection.find();
   // console.log(list);
-  const changeStream = collection.watch();
+  let resumeToken = await db.collection('resumeToken').findOne({});
+  resumeToken = resumeToken ? resumeToken.resumeToken : {};
+  const changeStream = collection.watch({ "resumeAfter" : resumeToken });
   const AuditColl = db.collection('AuditCollection');
   
   await changeStream.on('change', async (next) => {
@@ -61,7 +64,7 @@ async function startChangeStream() {
       },
     },
   ];
-  const dbWatch = db.watch(dbPipeline);
+  const dbWatch = db.watch(dbPipeline, { "resumeAfter" : resumeToken });
   await dbWatch.on('change', async (next) => {
     console.log('Received change event:', next);
     resumeToken = next._id;
@@ -82,7 +85,8 @@ async function startChangeStream() {
 }
 function getInsertDocument(streamNext)
 {
-  let insertDocument = {"CollectionInfo": null, "Operation": null, "Description": null, "TimeStamp": new Date()}
+  const date = new Date((streamNext.clusterTime.high * 1000) + (streamNext.clusterTime.low / 1000));
+  let insertDocument = {"CollectionInfo": null, "Operation": null, "Description": null, "TimeStamp": date};
   insertDocument.CollectionInfo = streamNext.ns.db + "." + streamNext.ns.coll;
   return insertDocument;
 }
@@ -94,15 +98,15 @@ async function databaseWatch(db)
 {
   
 }
-async function resumeIfAny(db)
-{
-  let resumeToken = await db.collection('resumeToken').findOne({});
-  resumeToken = resumeToken ? resumeToken.resumeToken : {};
-  const changeStream = client.watch([], { startAtOperationTime: resumeToken });
-  changeStream.on('change', async next => {
-    console.log('Change detected: ', next);
-    resumeToken = next._id;
-    await db.collection('resumeToken').updateOne({}, { $set: { resumeToken } }, { upsert: true });
-  });
-}
+// async function resumeIfAny(db)
+// {
+//   let resumeToken = await db.collection('resumeToken').findOne({});
+//   resumeToken = resumeToken ? resumeToken.resumeToken : {};
+//   const changeStream = client.watch([], { "resumeAfter" : resumeToken });
+//   changeStream.on('change', async next => {
+//     console.log('Change detected: ', next);
+//     resumeToken = next._id;
+//     await db.collection('resumeToken').updateOne({}, { $set: { resumeToken } }, { upsert: true });
+//   });
+// }
 startChangeStream();
