@@ -1,6 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
 
- (async function startChangeStream() {
+async function startChangeStream() {
   const client = await MongoClient.connect('mongodb+srv://admin:admin@cluster0.8dymixf.mongodb.net');
   const db = client.db('test');
   // const oplog = client.db("local").collection("oplog.rs");
@@ -8,7 +8,8 @@ const MongoClient = require('mongodb').MongoClient;
   // await booksWatch(db);
   // await databaseWatch(db);
   const collection = db.collection('books');
-  list = collection.find();
+  console.log("Database connected");
+  // list = collection.find();
   // console.log(list);
   let resumeToken = await db.collection('resumeToken').findOne({});
   resumeToken = resumeToken ? resumeToken.resumeToken : {};
@@ -82,7 +83,7 @@ const MongoClient = require('mongodb').MongoClient;
       }
     await AuditColl.insertOne(insertDocument);
   });
-})()
+}
 function getInsertDocument(streamNext)
 {
   const date = new Date((streamNext.clusterTime.high * 1000) + (streamNext.clusterTime.low / 1000));
@@ -109,4 +110,4 @@ async function databaseWatch(db)
 //     await db.collection('resumeToken').updateOne({}, { $set: { resumeToken } }, { upsert: true });
 //   });
 // }
-//startChangeStream();
+startChangeStream();
