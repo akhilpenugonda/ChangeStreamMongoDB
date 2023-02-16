@@ -1,7 +1,8 @@
 const MongoClient = require('mongodb').MongoClient;
+require('dotenv').config();
 
  (async function startChangeStream() {
-  const client = await MongoClient.connect('mongodb+srv://admin:admin@cluster0.8dymixf.mongodb.net');
+  const client = await MongoClient.connect(process.env.MONGODB_URI);
   const db = client.db('test');
   // const oplog = client.db("local").collection("oplog.rs");
   // let firstItem = await oplog.findOne({ ns: "test.StreamTest" }, { sort: { $natural: -1 } });
@@ -12,6 +13,7 @@ const MongoClient = require('mongodb').MongoClient;
   // console.log(list);
   let resumeToken = await db.collection('resumeToken').findOne({});
   resumeToken = resumeToken ? resumeToken.resumeToken : {};
+  // const changeStream = collection.watch();
   const changeStream = collection.watch({ "resumeAfter" : resumeToken });
   const AuditColl = db.collection('AuditCollection');
   
@@ -64,6 +66,7 @@ const MongoClient = require('mongodb').MongoClient;
       },
     },
   ];
+  // const dbWatch = db.watch(dbPipeline);
   const dbWatch = db.watch(dbPipeline, { "resumeAfter" : resumeToken });
   await dbWatch.on('change', async (next) => {
     console.log('Received change event:', next);
