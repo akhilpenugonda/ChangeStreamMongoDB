@@ -4,13 +4,8 @@ require('dotenv').config();
  (async function startChangeStream() {
   const client = await MongoClient.connect(process.env.MONGODB_URI);
   const db = client.db('test');
-  // const oplog = client.db("local").collection("oplog.rs");
-  // let firstItem = await oplog.findOne({ ns: "test.StreamTest" }, { sort: { $natural: -1 } });
-  // await booksWatch(db);
-  // await databaseWatch(db);
   const collection = db.collection('books');
   list = collection.find();
-  // console.log(list);
   let resumeToken = await db.collection('resumeToken').findOne({});
   resumeToken = resumeToken ? resumeToken.resumeToken : {};
   // const changeStream = collection.watch();
@@ -101,15 +96,3 @@ async function databaseWatch(db)
 {
   
 }
-// async function resumeIfAny(db)
-// {
-//   let resumeToken = await db.collection('resumeToken').findOne({});
-//   resumeToken = resumeToken ? resumeToken.resumeToken : {};
-//   const changeStream = client.watch([], { "resumeAfter" : resumeToken });
-//   changeStream.on('change', async next => {
-//     console.log('Change detected: ', next);
-//     resumeToken = next._id;
-//     await db.collection('resumeToken').updateOne({}, { $set: { resumeToken } }, { upsert: true });
-//   });
-// }
-//startChangeStream();
